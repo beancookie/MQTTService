@@ -36,7 +36,6 @@ type GPS struct {
 func Sub(client mqtt.Client) {
 	topic := "event/gps/+/up"
 	token := client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
-
 		var gps GPS
 		msgpack.Unmarshal(msg.Payload(), &gps)
 		fmt.Printf("%d - Received message: %+v from topic: %s\n", time.Now().Unix(), gps, msg.Topic())
