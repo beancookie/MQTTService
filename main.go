@@ -33,12 +33,20 @@ type GPS struct {
 	Lon float32
 }
 
+type Event struct {
+	Rate int
+}
+
 func Sub(client mqtt.Client) {
 	topic := "event/gps/+/up"
 	token := client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
 		var gps GPS
 		msgpack.Unmarshal(msg.Payload(), &gps)
-		fmt.Printf("%d - Received message: %+v from topic: %s\n", time.Now().Unix(), gps, msg.Topic())
+		fmt.Printf(
+			"%d - Received message: %+v\n",
+			time.Now().Unix(),
+			gps,
+		)
 	})
 	token.Wait()
 }
@@ -47,10 +55,14 @@ func main() {
 	client := NewMQTTClient()
 	Sub(client)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Welcome to my website!")
+	http.HandleFunc("/event", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		sn := r.FormValue("sn")
+		rate := r.FormValue("rate")
+
+		client.Publish("event/gps/"+sn+"/down", 2, true, rate)
+		fmt.Println("down event to " + sn + ", rate is " + rate)
 	})
 
 	http.ListenAndServe(":8080", nil)
-
 }
